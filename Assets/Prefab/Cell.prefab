@@ -100,14 +100,14 @@ MonoBehaviour:
   ashColor: {r: 0.31132078, g: 0.31132078, b: 0.31132078, a: 1}
   emptyColor: {r: 0, g: 0, b: 0, a: 1}
   forestColor: {r: 0, g: 0.33962262, b: 0.095439345, a: 1}
-  forestInitLife: 1000
-  forestIncreasingValue: 5
-  forestDecreasingValue: -1
+  forestInitLife: 100000
+  forestIncreasingValue: 1000
+  forestDecreasingValue: -100
   plainColor: {r: 0, g: 1, b: 0.020439148, a: 1}
-  plaintInitLife: 5000
-  plainIncreasingValue: 2
-  plaintDecreasingValue: -3
+  plaintInitLife: 100000
+  plainIncreasingValue: 100
+  plaintDecreasingValue: -100
   swampColor: {r: 0, g: 0.509434, b: 0.39701453, a: 1}
-  swampInitLife: 1000
-  swampIncreasingValue: 1
-  swampDecreasingValue: -3
+  swampInitLife: 100000
+  swampIncreasingValue: 50
+  swampDecreasingValue: -50

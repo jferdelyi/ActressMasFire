@@ -3,114 +3,128 @@ using FireMAS;
 using ActressMasWrapper;
 
 // The graphic environment behaviour
-public class EnvironmentBehaviour : ActressMasWrapper.EnvironmentBehaviour {
-    // Exposed variables cell
-    public GameObject cellPrefab;
-    // Exposed variables fire
-    public GameObject firePrefab;
+public class EnvironmentBehaviour : GraphicalEnvironment {
+	// Exposed variables cell
+	public GameObject cellPrefab;
+	// Exposed variables fire
+	public GameObject firePrefab;
 
-    public int simulationPerSeconds = 60;
-    // Exposed variables forest count
-    public int forestCount = 1500;
-    // Exposed variables swamp count
-    public int swampCount = 500;
-    // Exposed variables starting fire count
-    public int fireCount = 1;
-    // Exposed variables size of the environment
-    public int gridSize = 50; // 50 * 50 = 2500 -> default is plain
-    // Each step of PropagationIntensity the fire propagate
-    public int propagationIntensity = 2;
-    // Max fire intensity
-    public int maxIntensity = 10;
+	public int simulationPerSeconds = 60;
+	// Exposed variables forest count
+	public int forestCount = 1500;
+	// Exposed variables swamp count
+	public int swampCount = 500;
+	// Exposed variables starting fire count
+	public int fireCount = 1;
+	// Exposed variables size of the environment
+	public int gridSize = 50; // 50 * 50 = 2500 -> default is plain
 
-    /*************************************************************************/
+	// The clamp for propagation
+	public int propagationIntensity = 2;
+	// Max fire intensity
+	public int maxIntensity = 10;
 
-    // Start is called before the first frame update
-    void Start() {
-        Environment = new FireMASEnvironment(simulationPerSeconds, this, gridSize, propagationIntensity, maxIntensity);
+	// Parallel or sequential ?
+	public bool parallel = false;
 
-        // Inner init
-        Init();
-    }
+	// Origine
+	private int mOrigineX;
+	private int mOrigineY;
 
-    // Each ticks
-    void Update() {
-        // Inner update
-        RunTurn();
-    }
+	/*************************************************************************/
 
-    /*************************************************************************/
+	// Start is called before the first frame update
+	void Start() {
+		Environment = new FireMASEnvironment(simulationPerSeconds, this, parallel);
+		Cell[,] lWorld = new Cell[gridSize, gridSize];
+		mOrigineX = (int)transform.position.x;
+		mOrigineY = (int)transform.position.y;
 
-    // Create new cell
-    private void CreateCell(int lX, int lY, CellType pCellType) {
-        // Instanciate and init cell
-        GameObject lCell = Instantiate(cellPrefab);
-        CellBehaviour lCellBehaviour = lCell.GetComponent<CellBehaviour>();
-        lCellBehaviour.Init(((FireMASEnvironment)Environment), lX, lY, pCellType);
-        ((FireMASEnvironment)Environment).AddToGrid((Cell)lCellBehaviour.Agent, lX, lY);
-        Environment.Add(lCellBehaviour.Agent, Tools.CreateName());
-    }
+		int lCellsCount = gridSize * gridSize;
+		int[] lRandVect = Environment.RandomArray(lCellsCount);
 
-    // Create new fire
-    private void CreateFire(Cell mCell) {
-        if (mCell.Fire != null) {
-            mCell.Fire.Intensify(propagationIntensity / 2);
-        } else {
-            // Instanciate and init fire
-            GameObject lFire = Instantiate(firePrefab);
-            FireBehaviour lFireBehaviour = lFire.GetComponent<FireBehaviour>();
-            lFireBehaviour.Init(((FireMASEnvironment)Environment), mCell);
-            Environment.Add(lFireBehaviour.Agent, Tools.CreateName());
-        }
-    }
+		// Create agents Forest
+		for (int lI = 0; lI < forestCount; lI++) {
+			int lX = lRandVect[lI] / gridSize;
+			int lY = lRandVect[lI] % gridSize;
+			InitCell(lWorld, lX, lY, CellType.Forest);
+		}
 
-    /*************************************************************************/
+		// Create agents Swamp
+		for (int lI = forestCount; lI < forestCount + swampCount; lI++) {
+			int lX = lRandVect[lI] / gridSize;
+			int lY = lRandVect[lI] % gridSize;
+			InitCell(lWorld, lX, lY, CellType.Swamp);
+		}
 
-    // Init the environment
-    protected override void InitEnvironment() {
-        int lCellsCount = gridSize * gridSize;
-        int[] lRandVect = Tools.RandomPermutation(lCellsCount);
+		// Set agent Plain
+		for (int lI = forestCount + swampCount; lI < gridSize * gridSize; lI++) {
+			int lX = lRandVect[lI] / gridSize;
+			int lY = lRandVect[lI] % gridSize;
+			InitCell(lWorld, lX, lY, CellType.Plain);
+		}
 
-        // Create agents Forest
-        for (int lI = 0; lI < forestCount; lI++) {
-            int lX = lRandVect[lI] / gridSize;
-            int lY = lRandVect[lI] % gridSize;
-            CreateCell(lX, lY, CellType.Forest);
-        }
+		// New permutation
+		lRandVect = Environment.RandomArray(lCellsCount);
 
-        // Create agents Swamp
-        for (int lI = forestCount; lI < forestCount + swampCount; lI++) {
-            int lX = lRandVect[lI] / gridSize;
-            int lY = lRandVect[lI] % gridSize;
-            CreateCell(lX, lY, CellType.Swamp);
-        }
+		// Create agents Fire
+		for (int lI = 0; lI < fireCount; lI++) {
+			int lX = lRandVect[lI] / gridSize;
+			int lY = lRandVect[lI] % gridSize;
+			InitFire(lWorld[lX, lY]);
+		}
 
-        // Set agent Plain
-        for (int lI = forestCount + swampCount; lI < gridSize * gridSize; lI++) {
-            int lX = lRandVect[lI] / gridSize;
-            int lY = lRandVect[lI] % gridSize;
-            CreateCell(lX, lY, CellType.Plain);
-        }
+		// Set shared values
+		Environment.SetMemory("maxIntensity", maxIntensity);
+		Environment.SetMemory("propagationIntensity", propagationIntensity);
 
-        // New permutation
-        lRandVect = Tools.RandomPermutation(lCellsCount);
+		FillNeighbour(lWorld);
+	}
 
-        // Create agents Fire
-        for (int lI = 0; lI < fireCount; lI++) {
-            int lX = lRandVect[lI] / gridSize;
-            int lY = lRandVect[lI] % gridSize;
-            CreateFire(((FireMASEnvironment)Environment).GetFromGrid(lX, lY));
-        }
+	/*************************************************************************/
 
-        ((FireMASEnvironment)Environment).FillNeighbour();
-    }
+	// Fill the neighbourg of each cell
+	private void FillNeighbour(Cell[,] pWorld) {
+		for (int lX = 0; lX < gridSize; lX++) {
+			for (int lY = 0; lY < gridSize; lY++) {
+				pWorld[lX, lY].FillNeighbour(pWorld, gridSize);
+			}
+		}
+	}
 
-    // Check new data
-    protected override void CheckNewData() {
-        // Create new fire
-        foreach (var lFireData in mAgentDataWrapper) {
-            CreateFire(((AgentData)lFireData.Value).Cell);
-        }
-        mAgentDataWrapper.Clear();
-    }
+	// Create new cell
+	private void InitCell(Cell[,] pWorld, int pX, int pY, CellType pCellType) {
+		// Instanciate and init cell
+		GameObject lCell = Instantiate(cellPrefab);
+		CellBehaviour lCellBehaviour = lCell.GetComponent<CellBehaviour>();
+		lCellBehaviour.Init((FireMASEnvironment)Environment, mOrigineX, mOrigineY, pX, pY, pCellType);
+		pWorld[pX, pY] = (Cell)lCellBehaviour.Agent;
+		Environment.Add(lCellBehaviour.Agent, Tools.CreateName());
+	}
+
+	// Create new fire
+	private void InitFire(Cell pCell) {
+		GameObject lFire = Instantiate(firePrefab);
+		FireBehaviour lFireBehaviour = lFire.GetComponent<FireBehaviour>();
+		lFireBehaviour.Init(pCell);
+		Environment.Add(lFireBehaviour.Agent, Tools.CreateName());
+	}
+
+	// Create new fire 
+	private void CreateFire(AgentData pData) {
+		GameObject lFire = Instantiate(firePrefab);
+		FireBehaviour lFireBehaviour = lFire.GetComponent<FireBehaviour>();
+		lFireBehaviour.Init(pData.Cell, pData.Fire);
+	}
+
+	/*************************************************************************/
+
+	// Check new data
+	protected override void CheckNewData() {
+		// Create new fire
+		foreach (var lFireData in mAgentDataWrapper) {
+			CreateFire((AgentData)lFireData.Value);
+		}
+		mAgentDataWrapper.Clear();
+	}
 }

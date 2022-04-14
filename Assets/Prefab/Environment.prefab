@@ -46,10 +46,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cellPrefab: {fileID: 7867587938078782336, guid: 40bbbbd02db11418390809956a2a91c4, type: 3}
   firePrefab: {fileID: 5712656584442651701, guid: 521f8129d3d2241d7ada42987826cd9f, type: 3}
-  simulationPerSeconds: 60
-  forestCount: 1500
-  swampCount: 500
+  simulationPerSeconds: 10
+  forestCount: 1750
+  swampCount: 250
   fireCount: 1
   gridSize: 50
-  propagationIntensity: 20
-  maxIntensity: 100
+  propagationIntensity: 2500
+  maxIntensity: 10000

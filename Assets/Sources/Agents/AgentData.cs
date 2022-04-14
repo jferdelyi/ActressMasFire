@@ -1,21 +1,22 @@
-﻿using ActressMasWrapper;
+﻿namespace FireMAS {
 
-namespace FireMAS {
+	// Data to create
+	public class AgentData {
 
-    // Data to create
-    public class AgentData : AgentDataWrapper {
+		// The cell where the fire will be created
+		public Cell Cell { get; set; }
 
-        // The cell where the fire will be created
-        public Cell Cell { get; protected set; }
+		// The agent
+		public Fire Fire { get; set; }
 
-        // Default intensity
-        public int Intensity { get; set; }
+		// Default intensity
+		public int Intensity { get; set; }
 
-        // Constructor
-        public AgentData(string pName, Cell pCell) {
-            Name = pName;
-            Cell = pCell;
-            Intensity = 1;
-        }
-    }
+		// Constructor
+		public AgentData(Cell pCell, Fire pFire = null, int pIntensity = 1) {
+			Cell = pCell;
+			Fire = pFire;
+			Intensity = pIntensity;
+		}
+	}
 }
